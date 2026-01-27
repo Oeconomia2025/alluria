@@ -320,7 +320,7 @@ export function Layout({
         </div>
 
         <div className="sticky top-20 bg-gray-950 z-10 border-b border-gray-700">
-          <nav className="p-4">
+          <nav className="p-2">
             <ul className="space-y-2">
               {sidebarItems.map((item, index) => (
                 <li key={index}>

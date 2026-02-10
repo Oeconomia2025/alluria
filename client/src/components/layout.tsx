@@ -229,8 +229,8 @@ export function Layout({ children }: LayoutProps) {
                       style={item.active ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
                       title={sidebarCollapsed ? item.label : undefined}
                     >
-                      <item.icon className="w-5 h-5 flex-shrink-0" style={item.active ? { color: "#10031d" } : {}} />
-                      {!sidebarCollapsed && <span className="whitespace-nowrap" style={item.active ? { color: "#10031d" } : {}}>{item.label}</span>}
+                      <item.icon className="w-5 h-5 flex-shrink-0" style={item.active ? { color: "white" } : {}} />
+                      {!sidebarCollapsed && <span className="whitespace-nowrap" style={item.active ? { color: "white" } : {}}>{item.label}</span>}
                       {sidebarCollapsed && (
                         <div className="absolute left-full ml-2 px-2 py-1 bg-[var(--crypto-dark)] text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                           {item.label}

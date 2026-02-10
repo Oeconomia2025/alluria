@@ -51,6 +51,7 @@ export function Layout({ children }: LayoutProps) {
     ALUD: 1.00,
     BTC: 0,
     ETH: 0,
+    BNB: 0,
     TAO: 0,
   });
 
@@ -58,13 +59,14 @@ export function Layout({ children }: LayoutProps) {
     const fetchPrices = async () => {
       try {
         const res = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,bittensor&vs_currencies=usd"
+          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,bittensor&vs_currencies=usd"
         );
         const data = await res.json();
         setTokenPrices((prev) => ({
           ...prev,
           BTC: data.bitcoin?.usd ?? prev.BTC,
           ETH: data.ethereum?.usd ?? prev.ETH,
+          BNB: data.binancecoin?.usd ?? prev.BNB,
           TAO: data.bittensor?.usd ?? prev.TAO,
         }));
       } catch (err) {
@@ -347,20 +349,25 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
               {[
-                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png" },
-                { symbol: "ALUD", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png" },
-                { symbol: "BTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png" },
-                { symbol: "ETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png" },
-                { symbol: "TAO", logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/22974.png" },
-              ].map((token) => (
-                <div
-                  key={token.symbol}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
-                  style={{ backgroundColor: "rgba(139, 76, 66, 0.2)", border: "1px solid rgba(139, 76, 66, 0.4)" }}
-                >
-                  <img src={token.logo} alt={token.symbol} className="w-4 h-4 rounded-full" />
-                  <span className="text-gray-400">{token.symbol}</span>
-                  <span style={{ color: "#d4a853" }}>${formatPrice(tokenPrices[token.symbol])}</span>
+                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png", group: "alluria" },
+                { symbol: "ALUD", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png", group: "alluria" },
+                { symbol: "BTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png", group: "market" },
+                { symbol: "ETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png", group: "market" },
+                { symbol: "BNB", logo: "https://tokens.1inch.io/0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c.png", group: "market" },
+                { symbol: "TAO", logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/22974.png", group: "market" },
+              ].map((token, i, arr) => (
+                <div key={token.symbol} className="flex items-center gap-2">
+                  {i > 0 && arr[i - 1].group !== token.group && (
+                    <div className="w-px h-5 bg-gray-600 mx-1" />
+                  )}
+                  <div
+                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
+                    style={{ backgroundColor: "rgba(139, 76, 66, 0.2)", border: "1px solid rgba(139, 76, 66, 0.4)" }}
+                  >
+                    <img src={token.logo} alt={token.symbol} className="w-4 h-4 rounded-full" />
+                    <span className="text-gray-400">{token.symbol}</span>
+                    <span style={{ color: "#d4a853" }}>${formatPrice(tokenPrices[token.symbol])}</span>
+                  </div>
                 </div>
               ))}
             </div>

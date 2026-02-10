@@ -73,3 +73,5 @@ Thumbs.db
 
 # Attached assets (screenshots, etc.)
 attached_assets/
+# Local Netlify folder
+.netlify

@@ -108,11 +108,11 @@ export function WalletConnect({ collapsed = false }: WalletConnectProps) {
         className={`w-full flex items-center ${
           collapsed ? "justify-center px-2" : "space-x-3 px-3"
         } py-2 rounded-lg text-white font-medium shadow-lg transition-all duration-200 hover:opacity-90 border-0`}
-        style={{ background: 'linear-gradient(45deg, #00d4ff, #ff00ff)' }}
+        style={{ background: 'linear-gradient(to right, #c43419, #d4a853)' }}
         title={collapsed ? formatAddress(address) : undefined}
       >
         <Wallet className="w-5 h-5 flex-shrink-0" />
-        {!collapsed && <span>{formatAddress(address)}</span>}
+        {!collapsed && <span className="whitespace-nowrap">{formatAddress(address)}</span>}
       </Button>
     )
   }
@@ -124,11 +124,11 @@ export function WalletConnect({ collapsed = false }: WalletConnectProps) {
           className={`w-full flex items-center ${
             collapsed ? "justify-center px-2" : "space-x-3 px-3"
           } py-2 rounded-lg text-white font-medium shadow-lg transition-all duration-200 hover:opacity-90`}
-          style={{ background: 'linear-gradient(45deg, #00d4ff, #ff00ff)' }}
+          style={{ background: 'linear-gradient(to right, #c43419, #d4a853)' }}
           title={collapsed ? "Connect Wallet" : undefined}
         >
           <Wallet className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>Connect Wallet</span>}
+          {!collapsed && <span className="whitespace-nowrap">Connect Wallet</span>}
         </button>
       </DialogTrigger>
       <DialogContent className="bg-gradient-to-br from-[var(--crypto-card)] to-[var(--crypto-dark)] border-crypto-blue/20 shadow-xl max-w-sm max-h-[90vh] overflow-y-auto">

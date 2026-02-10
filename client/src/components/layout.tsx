@@ -12,7 +12,7 @@ import { WalletConnect } from "@/components/wallet-connect";
 import { EcosystemSidebar } from "@/components/ecosystem-sidebar";
 
 import {
-  DollarSign,
+  LayoutDashboard,
   Lock,
   Unlock,
   Shield,
@@ -61,6 +61,7 @@ export function Layout({ children }: LayoutProps) {
         const res = await fetch(
           "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,bittensor&vs_currencies=usd"
         );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setTokenPrices((prev) => ({
           ...prev,
@@ -70,7 +71,23 @@ export function Layout({ children }: LayoutProps) {
           TAO: data.bittensor?.usd ?? prev.TAO,
         }));
       } catch (err) {
-        console.error("Error fetching prices:", err);
+        console.error("CoinGecko fetch failed, trying fallback:", err);
+        try {
+          const res = await fetch(
+            "https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH,BNB&tsyms=USD"
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setTokenPrices((prev) => ({
+              ...prev,
+              BTC: data.BTC?.USD ?? prev.BTC,
+              ETH: data.ETH?.USD ?? prev.ETH,
+              BNB: data.BNB?.USD ?? prev.BNB,
+            }));
+          }
+        } catch (fallbackErr) {
+          console.error("Fallback fetch also failed:", fallbackErr);
+        }
       }
     };
     fetchPrices();
@@ -96,6 +113,11 @@ export function Layout({ children }: LayoutProps) {
   const [location, navigate] = useLocation();
   const isNavigatingRef = useRef(false);
   const lockedCollapsedStateRef = useRef<boolean | null>(null);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
 
   // Social links
   const socialLinks = [
@@ -163,7 +185,7 @@ export function Layout({ children }: LayoutProps) {
   };
 
   const sidebarItems = [
-    { icon: DollarSign, label: "Lend", path: "/lend", active: location === "/" || location === "/lend" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/", active: location === "/" || location === "/lend" },
     { icon: Lock, label: "Deposit", path: "/deposit", active: location === "/deposit" },
     { icon: Unlock, label: "Repay", path: "/repay", active: location === "/repay" },
     { icon: Shield, label: "Stability Pool", path: "/stability-pool", active: location === "/stability-pool" },
@@ -358,7 +380,7 @@ export function Layout({ children }: LayoutProps) {
               ].map((token, i, arr) => (
                 <div key={token.symbol} className="flex items-center gap-2">
                   {i > 0 && arr[i - 1].group !== token.group && (
-                    <div className="w-px h-5 bg-gray-600 mx-1" />
+                    <div className="w-px h-5 bg-gray-600 mx-3" />
                   )}
                   <div
                     className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
@@ -372,16 +394,6 @@ export function Layout({ children }: LayoutProps) {
               ))}
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSupportOpen(true)}
-              className="w-8 h-8 p-0 rounded-full hover:opacity-80 transition-all duration-200 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 group ml-2 flex-shrink-0"
-              style={{ backgroundColor: "rgba(212, 168, 83, 0.15)", border: "1px solid rgba(212, 168, 83, 0.3)" }}
-              title="Support Development"
-            >
-              <Heart className="w-4 h-4 group-hover:text-white transition-colors fill-current" style={{ color: "#d4a853" }} />
-            </Button>
           </div>
 
           {/* Page content + footer */}

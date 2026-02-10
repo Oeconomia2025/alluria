@@ -4,7 +4,7 @@
 
 /* Prevent white flash on page refresh */
 html {
-  background-color: hsl(219, 39%, 11%);
+  background-color: #0d0118;
 }
 
 html.light {
@@ -84,31 +84,31 @@ body {
 }
 
 .dark {
-  --background: hsl(219, 39%, 11%);
+  --background: #0d0118;
   --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(220, 26%, 14%);
-  --muted-foreground: hsl(215, 16%, 57%);
-  --popover: hsl(220, 26%, 14%);
+  --muted: #1a0d2e;
+  --muted-foreground: #8a7a9e;
+  --popover: #1a0d2e;
   --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(220, 26%, 14%);
+  --card: #1a0d2e;
   --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(215, 16%, 25%);
-  --input: hsl(215, 16%, 25%);
-  --primary: hsl(217, 91%, 60%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(220, 26%, 14%);
+  --border: #3d2050;
+  --input: #3d2050;
+  --primary: #d4a853;
+  --primary-foreground: #10031d;
+  --secondary: #1a0d2e;
   --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(220, 26%, 14%);
+  --accent: #241540;
   --accent-foreground: hsl(0, 0%, 98%);
   --destructive: hsl(0, 62.8%, 30.6%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
+  --ring: #d4a853;
   --radius: 0.5rem;
 
   /* Crypto dashboard specific colors - Dark mode */
-  --crypto-dark: hsl(219, 39%, 11%);
-  --crypto-card: hsl(220, 26%, 14%);
-  --crypto-border: hsl(215, 16%, 25%);
+  --crypto-dark: #0d0118;
+  --crypto-card: #1a0d2e;
+  --crypto-border: #3d2050;
   --crypto-green: hsl(142, 76%, 36%);
   --crypto-red: hsl(0, 84%, 60%);
   --crypto-gold: hsl(43, 96%, 56%);

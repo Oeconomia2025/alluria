@@ -32,18 +32,8 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUR.png";
+const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png";
 
-// Route-based page info
-const pageInfo = {
-  "/": { title: "Lend", description: "Deposit collateral and borrow ALUD against your assets" },
-  "/lend": { title: "Lend", description: "Deposit collateral and borrow ALUD against your assets" },
-  "/deposit": { title: "Deposit", description: "Deposit collateral to open a lending position" },
-  "/repay": { title: "Repay", description: "Repay ALUD debt and manage your positions" },
-  "/stability-pool": { title: "Stability Pool", description: "Deposit ALUD to earn liquidation rewards" },
-  "/alur-staking": { title: "ALUR Staking", description: "Stake ALUR tokens to earn protocol fees" },
-  "/redemptions": { title: "Redemptions", description: "Redeem ALUD for underlying collateral" },
-} as const;
 
 export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,6 +45,46 @@ export function Layout({ children }: LayoutProps) {
     return false;
   });
 
+  // Live token prices
+  const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({
+    ALUR: 0.0842,
+    ALUD: 1.00,
+    BTC: 0,
+    ETH: 0,
+    TAO: 0,
+  });
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const res = await fetch(
+          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,bittensor&vs_currencies=usd"
+        );
+        const data = await res.json();
+        setTokenPrices((prev) => ({
+          ...prev,
+          BTC: data.bitcoin?.usd ?? prev.BTC,
+          ETH: data.ethereum?.usd ?? prev.ETH,
+          TAO: data.bittensor?.usd ?? prev.TAO,
+        }));
+      } catch (err) {
+        console.error("Error fetching prices:", err);
+      }
+    };
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatPrice = (price: number) => {
+    if (price === 0) return "...";
+    if (price >= 1000) return price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (price >= 1) return price.toFixed(2);
+    if (price >= 0.01) return price.toFixed(4);
+    return price.toFixed(6);
+  };
+
+  const [linksOpen, setLinksOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [donationStep, setDonationStep] = useState<"addresses" | "thankyou">("addresses");
@@ -74,9 +104,6 @@ export function Layout({ children }: LayoutProps) {
     { name: "GitHub", icon: SiGithub, url: "https://github.com/Oeconomia2025", enabled: true },
     { name: "Telegram", icon: SiTelegram, url: "https://t.me/OeconomiaDAO", enabled: true },
   ];
-
-  const routePageInfo = pageInfo[location as keyof typeof pageInfo] || pageInfo["/"];
-  const currentPageInfo = { title: routePageInfo.title, description: routePageInfo.description };
 
   // Persist collapsed state
   useEffect(() => {
@@ -150,7 +177,7 @@ export function Layout({ children }: LayoutProps) {
         className={`hidden lg:flex fixed top-[29px] z-[60] w-6 h-6 border rounded-full items-center justify-center hover:opacity-80 transition-all duration-300 ${
           sidebarCollapsed ? "left-[52px]" : "left-[180px]"
         }`}
-        style={{ backgroundColor: "#0a1a2a", borderColor: "#d4a853" }}
+        style={{ backgroundColor: "#10031d", borderColor: "#8b4c42" }}
         title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {sidebarCollapsed ? <ChevronRight className="w-3 h-3" style={{ color: "#d4a853" }} /> : <ChevronLeft className="w-3 h-3" style={{ color: "#d4a853" }} />}
@@ -165,10 +192,10 @@ export function Layout({ children }: LayoutProps) {
           } transform ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           } transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col shadow-xl shadow-black/70`}
-          style={{ backgroundColor: "#0a1a2a", borderRight: "1px solid #d4a853" }}
+          style={{ backgroundColor: "#10031d", borderRight: "1px solid #8b4c42" }}
         >
           {/* Sidebar header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between h-20 px-4 border-b-0" style={{ backgroundColor: "#0a1a2a" }}>
+          <div className="sticky top-0 z-10 flex items-center justify-between h-20 px-4 border-b-0" style={{ backgroundColor: "#10031d" }}>
             <div className={`flex items-center ${sidebarCollapsed ? "justify-center w-full" : "space-x-3"}`}>
               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                 <img src={alurLogo} alt="Alluria Logo" className="w-full h-full object-cover" />
@@ -185,7 +212,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {/* Sidebar nav */}
-          <div className="sticky top-20 z-10 border-b-0" style={{ backgroundColor: "#0a1a2a" }}>
+          <div className="sticky top-20 z-10 border-b-0" style={{ backgroundColor: "#10031d" }}>
             <nav className="p-2">
               <ul className="space-y-2">
                 {sidebarItems.map((item, i) => (
@@ -199,11 +226,11 @@ export function Layout({ children }: LayoutProps) {
                           ? "text-white font-medium shadow-lg transition-all duration-200"
                           : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       }`}
-                      style={item.active ? { background: "linear-gradient(45deg, #d4a853, #f0d890)" } : {}}
+                      style={item.active ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
                       title={sidebarCollapsed ? item.label : undefined}
                     >
-                      <item.icon className="w-5 h-5 flex-shrink-0" style={item.active ? { color: "#0a1a2a" } : {}} />
-                      {!sidebarCollapsed && <span className="whitespace-nowrap" style={item.active ? { color: "#0a1a2a" } : {}}>{item.label}</span>}
+                      <item.icon className="w-5 h-5 flex-shrink-0" style={item.active ? { color: "#10031d" } : {}} />
+                      {!sidebarCollapsed && <span className="whitespace-nowrap" style={item.active ? { color: "#10031d" } : {}}>{item.label}</span>}
                       {sidebarCollapsed && (
                         <div className="absolute left-full ml-2 px-2 py-1 bg-[var(--crypto-dark)] text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                           {item.label}
@@ -220,19 +247,23 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex-1 overflow-y-auto p-4" />
 
           {/* Bottom section */}
-          <div className="sticky bottom-0 p-2 border-t-0 flex flex-col space-y-2" style={{ backgroundColor: "#0a1a2a" }}>
+          <div className="sticky bottom-0 p-2 border-t-0 flex flex-col space-y-2" style={{ backgroundColor: "#10031d" }}>
             {/* Links Button */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={setLinksOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   className={`w-full flex items-center ${
                     sidebarCollapsed ? "justify-center px-2" : "space-x-3 px-3"
-                  } py-2 rounded-lg text-left transition-colors group relative hover:bg-white/5 transition-all duration-200`}
-                  style={{ backgroundColor: "rgba(212, 168, 83, 0.15)", border: "1px solid rgba(212, 168, 83, 0.3)" }}
+                  } py-2 rounded-lg text-left transition-colors group relative transition-all duration-200 ${
+                    linksOpen ? "text-white font-medium shadow-lg" : "bg-gray-800 shadow-lg"
+                  }`}
+                  style={linksOpen ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
+                  onMouseEnter={(e) => { if (!linksOpen) e.currentTarget.style.background = "linear-gradient(to right, #c43419, #d4a853)"; }}
+                  onMouseLeave={(e) => { if (!linksOpen) e.currentTarget.style.background = ""; }}
                   title={sidebarCollapsed ? "Links" : undefined}
                 >
-                  <Globe className="w-5 h-5 flex-shrink-0" style={{ color: "#d4a853" }} />
-                  {!sidebarCollapsed && <span style={{ color: "#d4a853" }}>Links</span>}
+                  <Globe className="w-5 h-5 flex-shrink-0" style={linksOpen ? { color: "#10031d" } : { color: "white" }} />
+                  {!sidebarCollapsed && <span style={linksOpen ? { color: "#10031d" } : {}}>Links</span>}
                   {sidebarCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-[var(--crypto-dark)] text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                       Links
@@ -277,7 +308,7 @@ export function Layout({ children }: LayoutProps) {
                 sidebarCollapsed ? "justify-center px-2" : "space-x-3 px-3"
               } py-2 rounded-lg text-left transition-colors group relative text-white hover:bg-white/5 transition-all duration-200`}
               style={{
-                background: "linear-gradient(#0a1a2a, #0a1a2a) padding-box, linear-gradient(45deg, #d4a853, #f0d890) border-box",
+                background: "linear-gradient(#10031d, #10031d) padding-box, linear-gradient(to right, #c43419, #d4a853) border-box",
                 border: "2px solid transparent",
               }}
               title={sidebarCollapsed ? "Oeconomia" : undefined}
@@ -305,41 +336,46 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Main column */}
         <div className="flex-1 lg:ml-0 mr-9 relative flex flex-col">
-          {/* Header */}
-          <header
-            className="sticky top-0 z-30 px-6 h-20 flex items-center shadow-xl shadow-black/70"
-            style={{ backgroundColor: "#0a1a2a", borderBottom: "none" }}
+          {/* Price pills bar */}
+          <div
+            className="sticky top-0 z-30 px-4 py-2 flex items-center shadow-xl shadow-black/70"
+            style={{ backgroundColor: "#10031d", borderBottom: "1px solid #8b4c42", borderLeft: "1px solid #8b4c42" }}
           >
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="lg:hidden">
-                  <Menu className="w-5 h-5" />
-                </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="lg:hidden mr-2">
+              <Menu className="w-5 h-5" />
+            </Button>
 
-                <div className="flex items-center space-x-3">
-                  <div className="flex flex-col">
-                    <div className="flex items-center space-x-2">
-                      <h1 className="text-xl font-semibold text-white">{currentPageInfo.title}</h1>
-                    </div>
-                    <p className="text-sm text-muted-foreground hidden md:block">{currentPageInfo.description}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSupportOpen(true)}
-                  className="w-10 h-10 p-0 rounded-full hover:opacity-80 transition-all duration-200 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 group"
-                  style={{ backgroundColor: "rgba(212, 168, 83, 0.15)", border: "1px solid rgba(212, 168, 83, 0.3)" }}
-                  title="Support Development"
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
+              {[
+                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png" },
+                { symbol: "ALUD", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png" },
+                { symbol: "BTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png" },
+                { symbol: "ETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png" },
+                { symbol: "TAO", logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/22974.png" },
+              ].map((token) => (
+                <div
+                  key={token.symbol}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
+                  style={{ backgroundColor: "rgba(139, 76, 66, 0.2)", border: "1px solid rgba(139, 76, 66, 0.4)" }}
                 >
-                  <Heart className="w-5 h-5 group-hover:text-white transition-colors fill-current" style={{ color: "#d4a853" }} />
-                </Button>
-              </div>
+                  <img src={token.logo} alt={token.symbol} className="w-4 h-4 rounded-full" />
+                  <span className="text-gray-400">{token.symbol}</span>
+                  <span style={{ color: "#d4a853" }}>${formatPrice(tokenPrices[token.symbol])}</span>
+                </div>
+              ))}
             </div>
-          </header>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSupportOpen(true)}
+              className="w-8 h-8 p-0 rounded-full hover:opacity-80 transition-all duration-200 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 group ml-2 flex-shrink-0"
+              style={{ backgroundColor: "rgba(212, 168, 83, 0.15)", border: "1px solid rgba(212, 168, 83, 0.3)" }}
+              title="Support Development"
+            >
+              <Heart className="w-4 h-4 group-hover:text-white transition-colors fill-current" style={{ color: "#d4a853" }} />
+            </Button>
+          </div>
 
           {/* Page content + footer */}
           <main className="flex-1">

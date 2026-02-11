@@ -33,7 +33,7 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUR.png";
+const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png";
 
 
 export function Layout({ children }: LayoutProps) {
@@ -378,7 +378,7 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
               {[
-                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUR.png", group: "alluria" },
+                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png", group: "alluria" },
                 { symbol: "ALUD", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png", group: "alluria" },
                 { symbol: "BTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png", group: "market" },
                 { symbol: "ETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png", group: "market" },

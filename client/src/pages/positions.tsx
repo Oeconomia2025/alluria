@@ -64,7 +64,11 @@ const mockPositions = [
   { address: "0x5e29...dc71", collateral: "WETH", collateralAmount: 8.50, collateralValue: 29074.25, debt: 5600, ratio: 519.2, lastActivity: "3w ago" },
   { address: "0xba4f...0e83", collateral: "WBNB", collateralAmount: 30.00, collateralValue: 19359.00, debt: 6100, ratio: 317.4, lastActivity: "1w ago" },
   { address: "0x08d7...a4f6", collateral: "WBTC", collateralAmount: 1.00, collateralValue: 67340.00, debt: 10000, ratio: 673.4, lastActivity: "2m ago" },
+  // My Positions
+  { address: "0xBa26...e9DF", collateral: "WETH", collateralAmount: 4.20, collateralValue: 14366.10, debt: 5500, ratio: 261.2, lastActivity: "3h ago" },
 ];
+
+const MY_WALLET = "0xBa26...e9DF";
 
 type RiskCategory = "critical" | "at-risk" | "moderate" | "healthy" | "very-safe";
 
@@ -125,12 +129,16 @@ const collateralLogos: Record<string, string> = {
 const riskOrder: RiskCategory[] = ["critical", "at-risk", "moderate", "healthy", "very-safe"];
 
 function PositionsContent() {
-  const [activeFilter, setActiveFilter] = useState<RiskCategory | "all">("all");
+  const [activeFilter, setActiveFilter] = useState<RiskCategory | "all" | "mine">("all");
 
   const sortedPositions = [...mockPositions].sort((a, b) => a.ratio - b.ratio);
 
+  const myPositions = sortedPositions.filter((p) => p.address === MY_WALLET);
+
   const filteredPositions = activeFilter === "all"
     ? sortedPositions
+    : activeFilter === "mine"
+    ? myPositions
     : sortedPositions.filter((p) => getRiskCategory(p.ratio) === activeFilter);
 
   const categoryCounts = riskOrder.reduce((acc, cat) => {
@@ -177,7 +185,7 @@ function PositionsContent() {
               </div>
 
               {/* Sticky section: Risk Distribution + Filters + Table Header */}
-              <div className="sticky top-[45px] z-20 -mx-8 px-8 pt-2 pb-0" style={{ backgroundColor: "var(--background)" }}>
+              <div className="sticky top-[45px] z-20 pt-2 pb-0" style={{ backgroundColor: "var(--background)" }}>
                 {/* Risk Distribution Bar */}
                 <Card className="crypto-card border mb-4">
                   <CardContent className="p-4">
@@ -242,6 +250,17 @@ function PositionsContent() {
                       {getRiskLabel(cat)} ({categoryCounts[cat]})
                     </Button>
                   ))}
+                  <Button
+                    variant={activeFilter === "mine" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveFilter("mine")}
+                    className={activeFilter === "mine"
+                      ? "text-white border-0"
+                      : "bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white"}
+                    style={activeFilter === "mine" ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
+                  >
+                    My Positions ({myPositions.length})
+                  </Button>
                 </div>
 
                 {/* Table Header (part of sticky block) */}

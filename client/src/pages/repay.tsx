@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ const collateralTokens: CollateralToken[] = [
 ];
 
 function RepayContent() {
+  const [, navigate] = useLocation();
   const [repayAmount, setRepayAmount] = useState("");
   const [selectedRepayPosition, setSelectedRepayPosition] = useState<LendingPosition | null>(null);
   const [showAllPositions, setShowAllPositions] = useState(false);
@@ -275,6 +277,13 @@ function RepayContent() {
                               <span className="text-orange-400">${position.liquidationPrice.toFixed(0)}</span>
                             </div>
                           </div>
+                          <Button
+                            size="sm"
+                            onClick={() => navigate("/deposit")}
+                            className="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                          >
+                            Go to Add Collateral
+                          </Button>
                         </div>
                       ))}
                     </div>

@@ -203,7 +203,7 @@ export function Layout({ children }: LayoutProps) {
         className={`hidden lg:flex fixed top-[29px] z-[60] w-6 h-6 border rounded-full items-center justify-center hover:opacity-80 transition-all duration-300 ${
           sidebarCollapsed ? "left-[52px]" : "left-[180px]"
         }`}
-        style={{ backgroundColor: "#10031d", borderColor: "#c89a6d" }}
+        style={{ backgroundColor: "#2a1f3d", borderColor: "#c89a6d" }}
         title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {sidebarCollapsed ? <ChevronRight className="w-3 h-3" style={{ color: "#d4a853" }} /> : <ChevronLeft className="w-3 h-3" style={{ color: "#d4a853" }} />}
@@ -390,10 +390,10 @@ export function Layout({ children }: LayoutProps) {
                     <div className="w-px h-5 bg-gray-600 mx-3" />
                   )}
                   <div
-                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
+                    className="flex items-center gap-1.5 rounded-full pl-[3px] pr-3 py-[3px] text-xs font-medium whitespace-nowrap"
                     style={{ backgroundColor: "rgba(200, 154, 109, 0.2)", border: "1px solid rgba(200, 154, 109, 0.4)" }}
                   >
-                    <img src={token.logo} alt={token.symbol} className="w-4 h-4 rounded-full" />
+                    <img src={token.logo} alt={token.symbol} className="w-5 h-5 rounded-full" />
                     <span className="text-gray-400">{token.symbol}</span>
                     <span style={{ color: "#d4a853" }}>${formatPrice(tokenPrices[token.symbol])}</span>
                   </div>

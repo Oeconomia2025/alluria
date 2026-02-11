@@ -79,9 +79,12 @@ function AlurStakingContent() {
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         <Button className="h-12 text-lg bg-gradient-to-r from-crypto-blue to-crypto-purple hover:from-crypto-blue/80 hover:to-crypto-purple/80 text-white font-medium">
                           Stake ALUR
+                        </Button>
+                        <Button variant="outline" className="h-12 text-lg border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]">
+                          Unstake
                         </Button>
                         <Button variant="outline" className="h-12 text-lg border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]">
                           Claim Fees

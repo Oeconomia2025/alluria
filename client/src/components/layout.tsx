@@ -18,6 +18,7 @@ import {
   Shield,
   Coins,
   ArrowUpDown,
+  Users,
   Menu,
   X,
   ChevronLeft,
@@ -32,7 +33,7 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png";
+const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUR.png";
 
 
 export function Layout({ children }: LayoutProps) {
@@ -191,6 +192,7 @@ export function Layout({ children }: LayoutProps) {
     { icon: Shield, label: "Stability Pool", path: "/stability-pool", active: location === "/stability-pool" },
     { icon: Coins, label: "ALUR Staking", path: "/alur-staking", active: location === "/alur-staking" },
     { icon: ArrowUpDown, label: "Redemptions", path: "/redemptions", active: location === "/redemptions" },
+    { icon: Users, label: "Positions", path: "/positions", active: location === "/positions" },
   ];
 
   return (
@@ -201,7 +203,7 @@ export function Layout({ children }: LayoutProps) {
         className={`hidden lg:flex fixed top-[29px] z-[60] w-6 h-6 border rounded-full items-center justify-center hover:opacity-80 transition-all duration-300 ${
           sidebarCollapsed ? "left-[52px]" : "left-[180px]"
         }`}
-        style={{ backgroundColor: "#10031d", borderColor: "#8b4c42" }}
+        style={{ backgroundColor: "#10031d", borderColor: "#c89a6d" }}
         title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {sidebarCollapsed ? <ChevronRight className="w-3 h-3" style={{ color: "#d4a853" }} /> : <ChevronLeft className="w-3 h-3" style={{ color: "#d4a853" }} />}
@@ -216,7 +218,7 @@ export function Layout({ children }: LayoutProps) {
           } transform ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           } transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col shadow-xl shadow-black/70`}
-          style={{ backgroundColor: "#10031d", borderRight: "1px solid #8b4c42" }}
+          style={{ backgroundColor: "#10031d", borderRight: "1px solid #c89a6d" }}
         >
           {/* Sidebar header */}
           <div className="sticky top-0 z-10 flex items-center justify-between h-20 px-4 border-b-0" style={{ backgroundColor: "#10031d" }}>
@@ -286,8 +288,8 @@ export function Layout({ children }: LayoutProps) {
                   onMouseLeave={(e) => { if (!linksOpen) e.currentTarget.style.background = ""; }}
                   title={sidebarCollapsed ? "Links" : undefined}
                 >
-                  <Globe className="w-5 h-5 flex-shrink-0" style={linksOpen ? { color: "#10031d" } : { color: "white" }} />
-                  {!sidebarCollapsed && <span style={linksOpen ? { color: "#10031d" } : {}}>Links</span>}
+                  <Globe className="w-5 h-5 flex-shrink-0" style={{ color: "white" }} />
+                  {!sidebarCollapsed && <span className="text-white">Links</span>}
                   {sidebarCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-[var(--crypto-dark)] text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                       Links
@@ -299,12 +301,15 @@ export function Layout({ children }: LayoutProps) {
                 side="top"
                 align="start"
                 className={`mb-2 ${sidebarCollapsed ? "w-[calc(4rem-1rem)]" : "w-[calc(12rem-1rem)]"}`}
+                style={{ borderColor: "#c89a6d", backgroundColor: "#10031d" }}
               >
                 <DropdownMenuItem
                   onClick={() => window.open("https://oeconomia.tech/", "_blank")}
-                  className={`cursor-pointer hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-purple-600/20 transition-all duration-200 ${
+                  className={`cursor-pointer rounded-md transition-all duration-200 focus:bg-transparent ${
                     sidebarCollapsed ? "justify-center px-2" : "px-3"
                   }`}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "linear-gradient(to right, #c43419, #d4a853)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
                 >
                   <Globe className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed ? "" : "mr-3"}`} />
                   {!sidebarCollapsed && <span>Website</span>}
@@ -313,10 +318,12 @@ export function Layout({ children }: LayoutProps) {
                   <DropdownMenuItem
                     key={link.name}
                     onClick={() => link.enabled && window.open(link.url, "_blank")}
-                    className={`cursor-pointer hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-purple-600/20 transition-all duration-200 ${
+                    className={`cursor-pointer rounded-md transition-all duration-200 focus:bg-transparent ${
                       !link.enabled ? "opacity-50" : ""
                     } ${sidebarCollapsed ? "justify-center px-2" : "px-3"}`}
                     disabled={!link.enabled}
+                    onMouseEnter={(e) => { if (link.enabled) e.currentTarget.style.background = "linear-gradient(to right, #c43419, #d4a853)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
                   >
                     <link.icon className={`w-5 h-5 flex-shrink-0 ${sidebarCollapsed ? "" : "mr-3"}`} />
                     {!sidebarCollapsed && <span>{link.name}</span>}
@@ -363,7 +370,7 @@ export function Layout({ children }: LayoutProps) {
           {/* Price pills bar */}
           <div
             className="sticky top-0 z-30 px-4 py-2 flex items-center shadow-xl shadow-black/70"
-            style={{ backgroundColor: "#10031d", borderBottom: "1px solid #8b4c42", borderLeft: "1px solid #8b4c42" }}
+            style={{ backgroundColor: "#10031d", borderBottom: "1px solid #c89a6d", borderLeft: "1px solid #c89a6d" }}
           >
             <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="lg:hidden mr-2">
               <Menu className="w-5 h-5" />
@@ -371,7 +378,7 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
               {[
-                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png", group: "alluria" },
+                { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUR.png", group: "alluria" },
                 { symbol: "ALUD", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png", group: "alluria" },
                 { symbol: "BTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png", group: "market" },
                 { symbol: "ETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png", group: "market" },
@@ -384,7 +391,7 @@ export function Layout({ children }: LayoutProps) {
                   )}
                   <div
                     className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
-                    style={{ backgroundColor: "rgba(139, 76, 66, 0.2)", border: "1px solid rgba(139, 76, 66, 0.4)" }}
+                    style={{ backgroundColor: "rgba(200, 154, 109, 0.2)", border: "1px solid rgba(200, 154, 109, 0.4)" }}
                   >
                     <img src={token.logo} alt={token.symbol} className="w-4 h-4 rounded-full" />
                     <span className="text-gray-400">{token.symbol}</span>

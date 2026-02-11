@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png";
+const alurLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUR.png";
 
 function AlurStakingContent() {
   const [alurStakeAmount, setAlurStakeAmount] = useState("");

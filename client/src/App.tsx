@@ -11,6 +11,7 @@ import Repay from "@/pages/repay";
 import StabilityPool from "@/pages/stability-pool";
 import AlurStaking from "@/pages/alur-staking";
 import Redemptions from "@/pages/redemptions";
+import Positions from "@/pages/positions";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/stability-pool" component={StabilityPool} />
       <Route path="/alur-staking" component={AlurStaking} />
       <Route path="/redemptions" component={Redemptions} />
+      <Route path="/positions" component={Positions} />
       <Route component={NotFound} />
     </Switch>
   );

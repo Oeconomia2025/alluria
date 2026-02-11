@@ -224,43 +224,25 @@ function PositionsContent() {
                 </Card>
 
                 {/* Filter Buttons */}
-                <div className="flex gap-2 flex-wrap mb-4">
-                  <Button
-                    variant={activeFilter === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveFilter("all")}
-                    className={activeFilter === "all"
-                      ? "text-white border-0"
-                      : "bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white"}
-                    style={activeFilter === "all" ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
-                  >
-                    All ({mockPositions.length})
-                  </Button>
-                  {riskOrder.map((cat) => (
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {[
+                    { key: "all" as const, label: `All (${mockPositions.length})` },
+                    ...riskOrder.map((cat) => ({ key: cat as RiskCategory, label: `${getRiskLabel(cat)} (${categoryCounts[cat]})` })),
+                    { key: "mine" as const, label: `My Positions (${myPositions.length})` },
+                  ].map((item) => (
                     <Button
-                      key={cat}
-                      variant={activeFilter === cat ? "default" : "outline"}
+                      key={item.key}
+                      variant={activeFilter === item.key ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setActiveFilter(cat)}
-                      className={activeFilter === cat
-                        ? `text-white border-0`
-                        : `bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white`}
-                      style={activeFilter === cat ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
+                      onClick={() => setActiveFilter(item.key)}
+                      className={`w-full ${activeFilter === item.key
+                        ? "text-white border-0"
+                        : "bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white"}`}
+                      style={activeFilter === item.key ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
                     >
-                      {getRiskLabel(cat)} ({categoryCounts[cat]})
+                      {item.label}
                     </Button>
                   ))}
-                  <Button
-                    variant={activeFilter === "mine" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveFilter("mine")}
-                    className={activeFilter === "mine"
-                      ? "text-white border-0"
-                      : "bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white"}
-                    style={activeFilter === "mine" ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}
-                  >
-                    My Positions ({myPositions.length})
-                  </Button>
                 </div>
 
                 {/* Table Header (part of sticky block) */}

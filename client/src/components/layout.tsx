@@ -387,10 +387,10 @@ export function Layout({ children }: LayoutProps) {
               ].map((token, i, arr) => (
                 <div key={token.symbol} className="flex items-center gap-2">
                   {i > 0 && arr[i - 1].group !== token.group && (
-                    <div className="w-px h-5 bg-gray-600 mx-3" />
+                    <div className="w-px h-5 bg-gray-600 mx-6" />
                   )}
                   <div
-                    className="flex items-center gap-1.5 rounded-full pl-[3px] pr-3 py-[3px] text-xs font-medium whitespace-nowrap"
+                    className="flex items-center gap-1.5 rounded-full pl-[3px] pr-3 py-[3px] text-sm font-medium whitespace-nowrap"
                     style={{ backgroundColor: "rgba(200, 154, 109, 0.2)", border: "1px solid rgba(200, 154, 109, 0.4)" }}
                   >
                     <img src={token.logo} alt={token.symbol} className="w-5 h-5 rounded-full" />

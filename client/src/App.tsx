@@ -12,6 +12,7 @@ import StabilityPool from "@/pages/stability-pool";
 import AlurStaking from "@/pages/alur-staking";
 import Redemptions from "@/pages/redemptions";
 import Positions from "@/pages/positions";
+import Ecosystem from "@/pages/ecosystem";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/alur-staking" component={AlurStaking} />
       <Route path="/redemptions" component={Redemptions} />
       <Route path="/positions" component={Positions} />
+      <Route path="/ecosystem/:protocol?" component={Ecosystem} />
       <Route component={NotFound} />
     </Switch>
   );

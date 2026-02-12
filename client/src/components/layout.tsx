@@ -17,7 +17,6 @@ import {
   Unlock,
   Shield,
   Coins,
-  Layers,
   ArrowUpDown,
   Users,
   Menu,
@@ -192,7 +191,6 @@ export function Layout({ children }: LayoutProps) {
     { icon: Unlock, label: "Repay", path: "/repay", active: location === "/repay" },
     { icon: Shield, label: "Stability Pool", path: "/stability-pool", active: location === "/stability-pool" },
     { icon: Coins, label: "ALUR Staking", path: "/alur-staking", active: location === "/alur-staking" },
-    { icon: Layers, label: "Ecosystem", path: "/ecosystem", active: location.startsWith("/ecosystem") },
     { icon: ArrowUpDown, label: "Redemptions", path: "/redemptions", active: location === "/redemptions" },
     { icon: Users, label: "Positions", path: "/positions", active: location === "/positions" },
   ];
@@ -282,7 +280,7 @@ export function Layout({ children }: LayoutProps) {
                 <button
                   className={`w-full flex items-center ${
                     sidebarCollapsed ? "justify-center px-2" : "space-x-3 px-3"
-                  } py-2 rounded-lg text-left transition-colors group relative transition-all duration-200 focus:outline-none focus:ring-0 focus:border-none outline-none ring-0 ${
+                  } py-2 rounded-lg text-left transition-colors group relative transition-all duration-200 ${
                     linksOpen ? "text-white font-medium shadow-lg" : "bg-gray-800 shadow-lg"
                   }`}
                   style={linksOpen ? { background: "linear-gradient(to right, #c43419, #d4a853)" } : {}}

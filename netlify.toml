@@ -12,8 +12,9 @@
   external_node_modules = ["ws"]
   included_files = ["shared/schema.js"]
 
-[functions."live-coin-watch-sync"]
-  schedule = "*/1 * * * *"
+# Disabled — Eloqura handles the sync for the shared Neon database
+# [functions."live-coin-watch-sync"]
+#   schedule = "*/1 * * * *"
 
 
 

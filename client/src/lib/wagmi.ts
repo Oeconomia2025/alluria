@@ -1,5 +1,5 @@
 import { http, createConfig, createStorage } from 'wagmi'
-import { bsc, bscTestnet } from 'wagmi/chains'
+import { sepolia } from 'wagmi/chains'
 import { coinbaseWallet, metaMask, walletConnect, injected } from 'wagmi/connectors'
 
 // Extend Window interface for wallet types
@@ -8,7 +8,6 @@ declare global {
     trustWallet?: any
     rabby?: any
     okxwallet?: any
-    BinanceChain?: any
     safe?: any
     phantom?: {
       ethereum?: any
@@ -20,7 +19,7 @@ declare global {
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'f0b928a2e4e4b0e9b5e8a2f5e3e4b0e9'
 
 export const config = createConfig({
-  chains: [bsc, bscTestnet],
+  chains: [sepolia],
   storage: createStorage({
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
   }),
@@ -67,13 +66,6 @@ export const config = createConfig({
     }),
     injected({
       target: {
-        id: 'binance',
-        name: 'Binance Wallet',
-        provider: (window) => (window as any)?.BinanceChain,
-      },
-    }),
-    injected({
-      target: {
         id: 'phantom',
         name: 'Phantom Wallet',
         provider: (window) => window?.phantom?.ethereum,
@@ -92,8 +84,7 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    [bsc.id]: http(),
-    [bscTestnet.id]: http(),
+    [sepolia.id]: http(),
   },
 })
 

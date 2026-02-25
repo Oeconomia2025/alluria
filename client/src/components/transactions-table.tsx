@@ -66,7 +66,7 @@ export function TransactionsTable({ contractAddress }: TransactionsTableProps) {
   };
 
   const getBlockExplorerUrl = (hash: string) => {
-    return `https://bscscan.com/tx/${hash}`;
+    return `https://sepolia.etherscan.io/tx/${hash}`;
   };
 
   return (
@@ -75,7 +75,7 @@ export function TransactionsTable({ contractAddress }: TransactionsTableProps) {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Recent Transactions</h2>
           <a 
-            href={`https://bscscan.com/token/${contractAddress}`}
+            href={`https://sepolia.etherscan.io/token/${contractAddress}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-crypto-blue hover:text-crypto-blue/80 text-sm flex items-center gap-1"

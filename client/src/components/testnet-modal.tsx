@@ -14,7 +14,7 @@ export function TestnetModal({ isOpen, onClose }: TestnetModalProps) {
   
   // Placeholder testnet contract address
   const testnetContract = "0xTestContract123456789012345678901234567890";
-  const testnetBSCScanUrl = `https://etherscan.io/address/0xb62870f6861bf065f5a6782996ab070eb9385d05`;
+  const testnetEtherscanUrl = `https://sepolia.etherscan.io/address/0x2b2fb8df4ac5d394f0d5674d7a54802e42a06aba`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -50,7 +50,7 @@ export function TestnetModal({ isOpen, onClose }: TestnetModalProps) {
               <div>
                 <div className="font-medium text-crypto-gold mb-1">Testing Mode</div>
                 <div className="text-sm text-gray-400">
-                  Use ETH Testnet for testing. Get test BNB from faucet before testing transactions.
+                  Use Sepolia Testnet for testing. Get test ETH from faucet before testing transactions.
                 </div>
               </div>
             </div>
@@ -78,7 +78,7 @@ export function TestnetModal({ isOpen, onClose }: TestnetModalProps) {
               asChild
               className="w-full bg-crypto-blue hover:bg-crypto-blue/80"
             >
-              <a href={testnetBSCScanUrl} target="_blank" rel="noopener noreferrer">
+              <a href={testnetEtherscanUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 View on Testnet Explorer
               </a>

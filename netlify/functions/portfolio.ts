@@ -50,7 +50,7 @@ export const handler: Handler = async (event, context) => {
 
     for (const tokenAddress of tokenAddresses) {
       try {
-        // Mock token balance since BSCScan API was removed
+        // Mock token balance since direct on-chain balance check was removed
         const balance = "1000";
         
         // Get token info from our existing API

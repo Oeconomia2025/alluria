@@ -112,7 +112,7 @@ export function TokenInfoPanel({ tokenData, isLoading }: TokenInfoPanelProps) {
           </div>
           <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
             <Info className="w-3 h-3" />
-            Fees auto-convert to BNB/WBNB
+            Fees auto-convert to ETH/WETH
           </div>
         </div>
       </Card>

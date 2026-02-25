@@ -273,11 +273,23 @@ export function EcosystemSidebar() {
       >
         {/* Bar - always visible, acts as left edge handle */}
         <div
-          className={`w-9 h-full shrink-0 cursor-pointer relative border-l border-violet-500/30 transition-colors duration-300 ${
-            expanded
-              ? "bg-gradient-to-b from-violet-600 via-cyan-600 to-violet-600"
-              : "bg-gradient-to-b from-violet-500/30 via-cyan-500/20 to-violet-500/30 hover:from-violet-500/50 hover:via-cyan-500/40 hover:to-violet-500/50"
-          }`}
+          className={`w-9 h-full shrink-0 cursor-pointer relative border-l transition-colors duration-300`}
+          style={{
+            borderColor: expanded ? "rgba(212, 168, 83, 0.5)" : "rgba(61, 32, 80, 0.8)",
+            background: expanded
+              ? "linear-gradient(to bottom, #c43419, #d4a853, #c43419)"
+              : "linear-gradient(to bottom, rgba(196, 52, 25, 0.2), rgba(212, 168, 83, 0.15), rgba(196, 52, 25, 0.2))",
+          }}
+          onMouseEnter={(e) => {
+            if (!expanded) {
+              e.currentTarget.style.background = "linear-gradient(to bottom, rgba(196, 52, 25, 0.4), rgba(212, 168, 83, 0.3), rgba(196, 52, 25, 0.4))";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!expanded) {
+              e.currentTarget.style.background = "linear-gradient(to bottom, rgba(196, 52, 25, 0.2), rgba(212, 168, 83, 0.15), rgba(196, 52, 25, 0.2))";
+            }
+          }}
           onClick={toggleExpanded}
         >
           <div className="absolute inset-0 flex flex-col items-center justify-between py-3">
@@ -319,9 +331,10 @@ export function EcosystemSidebar() {
 
         {/* Expanded images panel - appears to the right of bar */}
         <div
-          className={`h-full bg-black/90 flex flex-col items-center justify-center gap-3 py-4 px-3 transition-all duration-300 ${
+          className={`h-full flex flex-col items-center justify-center gap-3 py-4 px-3 transition-all duration-300 ${
             expanded ? "w-[80px] opacity-100 overflow-visible" : "w-0 opacity-0 overflow-hidden"
           }`}
+          style={{ backgroundColor: "rgba(13, 1, 24, 0.95)" }}
         >
           {ecosystemItems.map((item) => (
             <a
@@ -350,7 +363,7 @@ export function EcosystemSidebar() {
                 src={item.image}
                 alt={item.name}
                 className={`w-12 h-12 rounded-full object-cover transition-all duration-200 ${
-                  hoveredItem === item.name ? "scale-110 ring-2 ring-violet-400/60" : "hover:scale-110"
+                  hoveredItem === item.name ? "scale-110 ring-2 ring-amber-500/60" : "hover:scale-110"
                 }`}
               />
             </a>

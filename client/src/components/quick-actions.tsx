@@ -12,7 +12,7 @@ export function QuickActions({ contractAddress }: QuickActionsProps) {
   const [showTestnetModal, setShowTestnetModal] = useState(false);
 
   const pancakeSwapUrl = `https://app.uniswap.org/swap?outputCurrency=0xb62870F6861BF065F5a6782996AB070EB9385d05`;
-  const bscscanUrl = `https://etherscan.io/address/0xb62870F6861BF065F5a6782996AB070EB9385d05`;
+  const etherscanUrl = `https://sepolia.etherscan.io/address/0x2b2fb8df4ac5d394f0d5674d7a54802e42a06aba`;
 
   return (
     <>
@@ -39,7 +39,7 @@ export function QuickActions({ contractAddress }: QuickActionsProps) {
               variant="outline"
               className="bg-crypto-green/10 hover:bg-crypto-green/20 border-crypto-green/30 rounded-lg p-4 h-auto flex-col space-y-2 group"
             >
-              <a href={bscscanUrl} target="_blank" rel="noopener noreferrer">
+              <a href={etherscanUrl} target="_blank" rel="noopener noreferrer">
                 <Search className="text-crypto-green text-2xl group-hover:scale-110 transition-transform" />
                 <div className="text-center">
                   <div className="font-medium">View on Etherscan</div>

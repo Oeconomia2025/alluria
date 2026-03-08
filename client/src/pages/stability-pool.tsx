@@ -3,17 +3,87 @@ import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAlluria } from "@/hooks/use-alluria";
+import { useAluriaActions } from "@/hooks/use-alluria-actions";
+import {
+  formatALUD,
+  formatUSDDisplay,
+  getCollateralMeta,
+  formatCollateral,
+} from "@/services/alluria-contracts";
 
 const aludLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png";
 
 function StabilityPoolContent() {
   const [stabilityPoolAmount, setStabilityPoolAmount] = useState("");
+  const {
+    stabilityPoolStats,
+    userStabilityPosition,
+    aludBalance,
+    systemStats,
+    isConnected,
+    contractsDeployed,
+    refetch,
+  } = useAlluria();
+  const actions = useAluriaActions();
+
+  const aludBalanceNum = Number(formatALUD(aludBalance));
 
   const handleStabilityPoolPercentageClick = (percentage: number) => {
-    const availableAmount = 1000;
-    const amount = (availableAmount * percentage / 100).toString();
-    setStabilityPoolAmount(amount);
+    const amount = (aludBalanceNum * percentage) / 100;
+    setStabilityPoolAmount(amount > 0 ? amount.toFixed(2) : "");
   };
+
+  const userDeposit = userStabilityPosition
+    ? Number(formatALUD(userStabilityPosition.deposit))
+    : 0;
+  const totalDeposits = stabilityPoolStats
+    ? Number(formatALUD(stabilityPoolStats.totalDeposits))
+    : 0;
+  const userSharePct =
+    totalDeposits > 0 ? ((userDeposit / totalDeposits) * 100).toFixed(2) : "0.00";
+  const pendingOEC = userStabilityPosition
+    ? Number(formatALUD(userStabilityPosition.pendingOEC))
+    : 0;
+
+  const handleDeposit = () => {
+    if (!stabilityPoolAmount || parseFloat(stabilityPoolAmount) <= 0) return;
+    actions.depositToStabilityPool(stabilityPoolAmount, () => {
+      setStabilityPoolAmount("");
+      refetch();
+    });
+  };
+
+  const handleWithdraw = () => {
+    if (!stabilityPoolAmount || parseFloat(stabilityPoolAmount) <= 0) return;
+    actions.withdrawFromStabilityPool(stabilityPoolAmount, () => {
+      setStabilityPoolAmount("");
+      refetch();
+    });
+  };
+
+  const handleClaimGains = () => {
+    actions.claimCollateralGains(() => refetch());
+  };
+
+  const handleClaimOEC = () => {
+    actions.claimOECRewards(() => refetch());
+  };
+
+  // Compute collateral gains display
+  const collateralGains: { symbol: string; amount: string }[] = [];
+  if (userStabilityPosition) {
+    for (let i = 0; i < userStabilityPosition.gainTokens.length; i++) {
+      const token = getCollateralMeta(userStabilityPosition.gainTokens[i]);
+      const amt = userStabilityPosition.gainAmounts[i];
+      if (amt > BigInt(0) && token) {
+        collateralGains.push({
+          symbol: token.symbol,
+          amount: formatCollateral(amt, token.decimals),
+        });
+      }
+    }
+  }
 
   return (
     <Layout>
@@ -29,30 +99,43 @@ function StabilityPoolContent() {
                         <img src={aludLogo} alt="ALUD" className="w-12 h-12 rounded-full border-half" />
                         <div>
                           <h3 className="text-xl font-bold text-white mb-2">Stability Pool</h3>
-                          <p className="text-gray-400 text-sm">Deposit ALUD to earn liquidation rewards and ALUR tokens</p>
+                          <p className="text-gray-400 text-sm">Deposit ALUD to earn liquidation rewards and OEC tokens</p>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-white">12.5%</div>
-                        <div className="text-sm text-gray-400">Current APY</div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="bg-[var(--crypto-card)] rounded-lg p-4 border border-[var(--crypto-border)]">
                         <div className="text-sm text-gray-400 mb-1">Total Deposited</div>
-                        <div className="text-lg font-bold text-white">$2,485,920</div>
-                        <div className="text-xs text-green-400">+5.2% this week</div>
+                        <div className="text-lg font-bold text-white">
+                          {contractsDeployed && stabilityPoolStats
+                            ? formatUSDDisplay(stabilityPoolStats.totalDeposits)
+                            : "$0.00"}
+                        </div>
                       </div>
                       <div className="bg-[var(--crypto-card)] rounded-lg p-4 border border-[var(--crypto-border)]">
                         <div className="text-sm text-gray-400 mb-1">Your Share</div>
-                        <div className="text-lg font-bold text-white">0.00%</div>
-                        <div className="text-xs text-gray-400">No deposit yet</div>
+                        <div className="text-lg font-bold text-white">
+                          {isConnected ? `${userSharePct}%` : "—"}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {isConnected
+                            ? userDeposit > 0
+                              ? `${userDeposit.toFixed(2)} ALUD`
+                              : "No deposit yet"
+                            : "Connect wallet"}
+                        </div>
                       </div>
                       <div className="bg-[var(--crypto-card)] rounded-lg p-4 border border-[var(--crypto-border)]">
-                        <div className="text-sm text-gray-400 mb-1">Pending Rewards</div>
-                        <div className="text-lg font-bold text-white">0 ALUR</div>
-                        <div className="text-xs text-gray-400">$0.00</div>
+                        <div className="text-sm text-gray-400 mb-1">Pending OEC Rewards</div>
+                        <div className="text-lg font-bold text-white">
+                          {isConnected ? `${pendingOEC.toFixed(4)} OEC` : "—"}
+                        </div>
+                        {collateralGains.length > 0 && (
+                          <div className="text-xs text-green-400 mt-1">
+                            +{collateralGains.map((g) => `${Number(g.amount).toFixed(4)} ${g.symbol}`).join(", ")}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -71,25 +154,77 @@ function StabilityPoolContent() {
                         </div>
                       </div>
 
-                      <div className="flex space-x-2">
-                        {[25, 50, 75, 100].map((percentage) => (
-                          <Button key={percentage} variant="outline" size="sm" onClick={() => handleStabilityPoolPercentageClick(percentage)}
-                            className="text-xs bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]"
-                          >{percentage}%</Button>
-                        ))}
-                      </div>
+                      {isConnected && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex space-x-2">
+                            {[25, 50, 75, 100].map((percentage) => (
+                              <Button key={percentage} variant="outline" size="sm" onClick={() => handleStabilityPoolPercentageClick(percentage)}
+                                className="text-xs bg-[var(--crypto-card)] border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]"
+                              >{percentage}%</Button>
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-400">
+                            Balance: {aludBalanceNum.toFixed(2)} ALUD
+                          </span>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-3 gap-3">
-                        <Button className="h-12 text-lg bg-gradient-to-r from-crypto-blue to-crypto-purple hover:from-crypto-blue/80 hover:to-crypto-purple/80 text-white font-medium">
-                          Deposit
+                        <Button
+                          onClick={handleDeposit}
+                          disabled={!!actions.pendingTx || !isConnected || !stabilityPoolAmount || parseFloat(stabilityPoolAmount) <= 0}
+                          className="h-12 text-lg bg-gradient-to-r from-crypto-blue to-crypto-purple hover:from-crypto-blue/80 hover:to-crypto-purple/80 text-white font-medium"
+                        >
+                          {actions.pendingTx?.includes("Deposited") ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                              <span>Depositing...</span>
+                            </div>
+                          ) : "Deposit"}
                         </Button>
-                        <Button variant="outline" className="h-12 text-lg border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]">
-                          Withdraw
+                        <Button
+                          onClick={handleWithdraw}
+                          disabled={!!actions.pendingTx || !isConnected || !stabilityPoolAmount || parseFloat(stabilityPoolAmount) <= 0}
+                          variant="outline"
+                          className="h-12 text-lg border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]"
+                        >
+                          {actions.pendingTx?.includes("Withdrew") ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                              <span>Withdrawing...</span>
+                            </div>
+                          ) : "Withdraw"}
                         </Button>
-                        <Button variant="outline" className="h-12 text-lg border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]">
-                          Claim Fees
+                        <Button
+                          onClick={handleClaimGains}
+                          disabled={!!actions.pendingTx || !isConnected}
+                          variant="outline"
+                          className="h-12 text-lg border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]"
+                        >
+                          {actions.pendingTx?.includes("Claimed collateral") ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                              <span>Claiming...</span>
+                            </div>
+                          ) : "Claim Gains"}
                         </Button>
                       </div>
+
+                      {isConnected && pendingOEC > 0 && (
+                        <Button
+                          onClick={handleClaimOEC}
+                          disabled={!!actions.pendingTx}
+                          variant="outline"
+                          className="w-full h-10 border-[var(--crypto-border)] text-gray-400 hover:text-white hover:bg-[var(--crypto-dark)]"
+                        >
+                          {actions.pendingTx?.includes("Claimed OEC") ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                              <span>Claiming OEC...</span>
+                            </div>
+                          ) : `Claim ${pendingOEC.toFixed(4)} OEC Rewards`}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -106,19 +241,27 @@ function StabilityPoolContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Total Value Locked</span>
-                      <span className="font-medium">$24.7M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.totalCollateralValueUSD)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">ALUD Circulating</span>
-                      <span className="font-medium">$18.2M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.totalALUDSupply)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Stability Pool</span>
-                      <span className="font-medium">$6.5M</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Current Rate</span>
-                      <span className="font-medium text-green-400">3.2% APR</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.stabilityPoolDeposits)
+                          : "—"}
+                      </span>
                     </div>
                   </div>
                 </CardContent>

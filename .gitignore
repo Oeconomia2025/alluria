@@ -75,3 +75,7 @@ Thumbs.db
 attached_assets/
 # Local Netlify folder
 .netlify
+
+# Hardhat
+artifacts/
+cache/

@@ -6,80 +6,76 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Lock, ChevronDown } from "lucide-react";
+import { useAlluria } from "@/hooks/use-alluria";
+import { useAluriaActions } from "@/hooks/use-alluria-actions";
+import {
+  formatALUD,
+  formatCollateral,
+  formatUSD,
+  formatUSDDisplay,
+  formatRatio,
+  getCollateralMeta,
+  type Address,
+} from "@/services/alluria-contracts";
 
 const aludLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png";
 
-interface CollateralToken {
-  symbol: string;
-  name: string;
-  address: string;
-  decimals: number;
-  logo: string;
-  price: number;
-  balance?: number;
-}
-
-interface LendingPosition {
+interface DisplayPosition {
   id: string;
-  collateralToken: CollateralToken;
+  collateralAddress: Address;
+  collateralSymbol: string;
+  collateralLogo: string;
   collateralAmount: number;
-  collateralValue: number;
+  collateralDecimals: number;
   borrowedAmount: number;
   collateralizationRatio: number;
   liquidationPrice: number;
-  interestRate: number;
-  isActive: boolean;
 }
-
-const collateralTokens: CollateralToken[] = [
-  {
-    symbol: "WBTC", name: "Wrapped Bitcoin",
-    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", decimals: 8,
-    logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png",
-    price: 67340.00, balance: 0.15234
-  },
-  {
-    symbol: "WBNB", name: "Wrapped BNB",
-    address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", decimals: 18,
-    logo: "https://tokens.1inch.io/0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c.png",
-    price: 645.20, balance: 5.432
-  },
-  {
-    symbol: "WETH", name: "Wrapped Ethereum",
-    address: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8", decimals: 18,
-    logo: "https://tokens.1inch.io/0x2170ed0880ac9a755fd29b2688956bd959f933f8.png",
-    price: 3420.50, balance: 2.847
-  }
-];
 
 function RepayContent() {
   const [, navigate] = useLocation();
   const [repayAmount, setRepayAmount] = useState("");
-  const [selectedRepayPosition, setSelectedRepayPosition] = useState<LendingPosition | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<DisplayPosition | null>(null);
   const [showAllPositions, setShowAllPositions] = useState(false);
-  const [positions, setPositions] = useState<LendingPosition[]>([]);
 
+  const {
+    userTroves,
+    aludBalance,
+    collateralPrices,
+    systemStats,
+    isConnected,
+    contractsDeployed,
+    refetch,
+  } = useAlluria();
+  const actions = useAluriaActions();
+
+  const aludBalanceNum = Number(formatALUD(aludBalance));
+
+  // Build positions from live trove data
+  const positions: DisplayPosition[] = userTroves.map((trove, i) => {
+    const meta = getCollateralMeta(trove.collateral);
+    return {
+      id: `trove-${i}`,
+      collateralAddress: trove.collateral,
+      collateralSymbol: meta?.symbol ?? "???",
+      collateralLogo: meta?.logo ?? "",
+      collateralAmount: meta ? Number(formatCollateral(trove.collateralAmount, meta.decimals)) : 0,
+      collateralDecimals: meta?.decimals ?? 18,
+      borrowedAmount: Number(formatALUD(trove.debt)),
+      collateralizationRatio: Number(formatRatio(trove.collateralRatio)),
+      liquidationPrice: Number(formatUSD(trove.liquidationPrice)),
+    };
+  });
+
+  // Auto-select lowest health position
   useEffect(() => {
-    const mockPositions: LendingPosition[] = [
-      {
-        id: "1", collateralToken: collateralTokens[0],
-        collateralAmount: 0.05, collateralValue: 3367.00,
-        borrowedAmount: 2450.00, collateralizationRatio: 137.5,
-        liquidationPrice: 59000.00, interestRate: 3.2, isActive: true
-      },
-      {
-        id: "2", collateralToken: collateralTokens[2],
-        collateralAmount: 1.25, collateralValue: 4275.63,
-        borrowedAmount: 3200.00, collateralizationRatio: 133.6,
-        liquidationPrice: 2816.00, interestRate: 3.1, isActive: true
-      }
-    ];
-    setPositions(mockPositions);
-    const lowestHealth = mockPositions.reduce((lowest, current) =>
-      current.collateralizationRatio < lowest.collateralizationRatio ? current : lowest
-    );
-    setSelectedRepayPosition(lowestHealth);
-  }, []);
+    if (positions.length > 0 && !selectedPosition) {
+      const lowest = positions.reduce((lo, cur) =>
+        cur.collateralizationRatio < lo.collateralizationRatio ? cur : lo
+      );
+      setSelectedPosition(lowest);
+    }
+  }, [positions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getRatioColor = (ratio: number) => {
     if (ratio < 120) return "text-red-400";
@@ -88,11 +84,43 @@ function RepayContent() {
   };
 
   const handleRepayPercentageClick = (percentage: number) => {
-    if (selectedRepayPosition) {
-      const amount = (selectedRepayPosition.borrowedAmount * percentage / 100).toString();
+    if (selectedPosition) {
+      const amount = (selectedPosition.borrowedAmount * percentage / 100).toFixed(2);
       setRepayAmount(amount);
     }
   };
+
+  const handleRepay = () => {
+    if (!selectedPosition || !repayAmount || parseFloat(repayAmount) <= 0) return;
+    const repayVal = parseFloat(repayAmount);
+    const isFullRepay = repayVal >= selectedPosition.borrowedAmount * 0.999;
+
+    if (isFullRepay) {
+      actions.closeTrove(selectedPosition.collateralAddress, () => {
+        setRepayAmount("");
+        setSelectedPosition(null);
+        refetch();
+      });
+    } else {
+      actions.repayALUD(selectedPosition.collateralAddress, repayAmount, () => {
+        setRepayAmount("");
+        refetch();
+      });
+    }
+  };
+
+  // Post-repayment calculation
+  const repayVal = parseFloat(repayAmount) || 0;
+  const remainingDebt = selectedPosition
+    ? Math.max(0, selectedPosition.borrowedAmount - repayVal)
+    : 0;
+  const newRatio = selectedPosition && remainingDebt > 0
+    ? (selectedPosition.collateralAmount *
+        (collateralPrices[selectedPosition.collateralAddress]
+          ? Number(formatUSD(collateralPrices[selectedPosition.collateralAddress]))
+          : 0)) /
+      remainingDebt * 100
+    : Infinity;
 
   return (
     <Layout>
@@ -115,23 +143,27 @@ function RepayContent() {
                         </span>
                       </div>
                       <div className="space-y-2">
-                        {!showAllPositions ? (
-                          selectedRepayPosition && (
+                        {!isConnected ? (
+                          <div className="text-center py-4 text-gray-400">Connect wallet to view positions</div>
+                        ) : positions.length === 0 ? (
+                          <div className="text-center py-4 text-gray-400">No active positions to repay</div>
+                        ) : !showAllPositions ? (
+                          selectedPosition && (
                             <div
                               onClick={() => setShowAllPositions(true)}
                               className="flex items-center justify-between p-3 bg-[var(--crypto-card)] border border-[var(--crypto-border)] rounded-lg hover:bg-[var(--crypto-dark)] cursor-pointer transition-colors"
                             >
                               <div className="flex items-center space-x-3">
-                                <img src={selectedRepayPosition.collateralToken.logo} alt={selectedRepayPosition.collateralToken.symbol} className="w-8 h-8 rounded-full" />
+                                <img src={selectedPosition.collateralLogo} alt={selectedPosition.collateralSymbol} className="w-8 h-8 rounded-full" />
                                 <div>
-                                  <div className="font-medium text-white">{selectedRepayPosition.collateralAmount} {selectedRepayPosition.collateralToken.symbol}</div>
-                                  <div className="text-sm text-gray-400">Borrowed: ${selectedRepayPosition.borrowedAmount.toFixed(2)} ALUD</div>
+                                  <div className="font-medium text-white">{selectedPosition.collateralAmount.toFixed(6)} {selectedPosition.collateralSymbol}</div>
+                                  <div className="text-sm text-gray-400">Borrowed: {selectedPosition.borrowedAmount.toFixed(2)} ALUD</div>
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <div className="text-right">
-                                  <div className={`text-sm font-bold ${getRatioColor(selectedRepayPosition.collateralizationRatio)}`}>
-                                    {selectedRepayPosition.collateralizationRatio.toFixed(1)}%
+                                  <div className={`text-sm font-bold ${getRatioColor(selectedPosition.collateralizationRatio)}`}>
+                                    {selectedPosition.collateralizationRatio.toFixed(1)}%
                                   </div>
                                   <div className="text-xs text-gray-400">Health</div>
                                 </div>
@@ -140,35 +172,31 @@ function RepayContent() {
                             </div>
                           )
                         ) : (
-                          positions.length > 0 ? (
-                            positions.map((position) => (
-                              <div
-                                key={position.id}
-                                onClick={() => { setSelectedRepayPosition(position); setShowAllPositions(false); }}
-                                className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
-                                  selectedRepayPosition?.id === position.id
-                                    ? 'bg-[var(--crypto-dark)] border-crypto-blue/50'
-                                    : 'bg-[var(--crypto-card)] border-[var(--crypto-border)] hover:bg-[var(--crypto-dark)]'
-                                }`}
-                              >
-                                <div className="flex items-center space-x-3">
-                                  <img src={position.collateralToken.logo} alt={position.collateralToken.symbol} className="w-8 h-8 rounded-full" />
-                                  <div>
-                                    <div className="font-medium text-white">{position.collateralAmount} {position.collateralToken.symbol}</div>
-                                    <div className="text-sm text-gray-400">Borrowed: ${position.borrowedAmount.toFixed(2)} ALUD</div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className={`text-sm font-bold ${getRatioColor(position.collateralizationRatio)}`}>
-                                    {position.collateralizationRatio.toFixed(1)}%
-                                  </div>
-                                  <div className="text-xs text-gray-400">Health</div>
+                          positions.map((position) => (
+                            <div
+                              key={position.id}
+                              onClick={() => { setSelectedPosition(position); setShowAllPositions(false); }}
+                              className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors ${
+                                selectedPosition?.id === position.id
+                                  ? 'bg-[var(--crypto-dark)] border-crypto-blue/50'
+                                  : 'bg-[var(--crypto-card)] border-[var(--crypto-border)] hover:bg-[var(--crypto-dark)]'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <img src={position.collateralLogo} alt={position.collateralSymbol} className="w-8 h-8 rounded-full" />
+                                <div>
+                                  <div className="font-medium text-white">{position.collateralAmount.toFixed(6)} {position.collateralSymbol}</div>
+                                  <div className="text-sm text-gray-400">Borrowed: {position.borrowedAmount.toFixed(2)} ALUD</div>
                                 </div>
                               </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-gray-400">No active positions to repay</div>
-                          )
+                              <div className="text-right">
+                                <div className={`text-sm font-bold ${getRatioColor(position.collateralizationRatio)}`}>
+                                  {position.collateralizationRatio.toFixed(1)}%
+                                </div>
+                                <div className="text-xs text-gray-400">Health</div>
+                              </div>
+                            </div>
+                          ))
                         )}
                       </div>
                     </div>
@@ -177,7 +205,9 @@ function RepayContent() {
                     <div className="bg-[var(--crypto-dark)] rounded-b-lg p-4 border-l border-r border-b border-[var(--crypto-border)] -mt-px">
                       <div className="flex items-center justify-between mb-3">
                         <label className="text-gray-400 text-sm">Repay Amount</label>
-                        <span className="text-sm text-gray-400">Available: $485.25 USDT</span>
+                        <span className="text-sm text-gray-400">
+                          Available: {isConnected ? `${aludBalanceNum.toFixed(2)} ALUD` : "—"}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Input
@@ -214,24 +244,32 @@ function RepayContent() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-400">Remaining Debt</span>
-                          <span className="text-gray-300">$0.00 ALUD</span>
+                          <span className="text-gray-300">{remainingDebt.toFixed(2)} ALUD</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-400">New Health Factor</span>
-                          <span className="text-green-400">∞</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Interest Saved</span>
-                          <span className="text-gray-300">$0.00</span>
+                          <span className={newRatio === Infinity ? "text-green-400" : getRatioColor(newRatio)}>
+                            {newRatio === Infinity ? "∞" : (newRatio / 110).toFixed(2)}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     <Button
-                      disabled={true}
-                      className="w-full h-12 text-lg bg-gradient-to-r from-crypto-blue to-crypto-purple hover:from-crypto-blue/80 hover:to-crypto-purple/80 text-white font-medium opacity-50"
+                      onClick={handleRepay}
+                      disabled={!selectedPosition || !repayAmount || parseFloat(repayAmount) <= 0 || !!actions.pendingTx || !isConnected}
+                      className="w-full h-12 text-lg bg-gradient-to-r from-crypto-blue to-crypto-purple hover:from-crypto-blue/80 hover:to-crypto-purple/80 text-white font-medium"
                     >
-                      Select Position to Repay
+                      {actions.pendingTx ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          <span>Processing...</span>
+                        </div>
+                      ) : !isConnected ? "Connect Wallet" : !selectedPosition
+                        ? "Select Position to Repay"
+                        : repayVal >= (selectedPosition?.borrowedAmount ?? 0) * 0.999
+                          ? "Close Position & Return Collateral"
+                          : `Repay ${repayAmount} ALUD`}
                     </Button>
                   </div>
                 </CardContent>
@@ -245,7 +283,12 @@ function RepayContent() {
                   <CardTitle className="text-lg">Your Positions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {positions.length === 0 ? (
+                  {!isConnected ? (
+                    <div className="text-center py-8">
+                      <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-sm text-muted-foreground">Connect wallet to view positions</p>
+                    </div>
+                  ) : positions.length === 0 ? (
                     <div className="text-center py-8">
                       <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-sm text-muted-foreground">No active positions</p>
@@ -256,8 +299,8 @@ function RepayContent() {
                         <div key={position.id} className="p-4 border rounded-lg space-y-3 hover:bg-muted/50 transition-colors">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
-                              <img src={position.collateralToken.logo} alt={position.collateralToken.symbol} className="w-6 h-6 rounded-full" />
-                              <span className="font-medium">{position.collateralToken.symbol}</span>
+                              <img src={position.collateralLogo} alt={position.collateralSymbol} className="w-6 h-6 rounded-full" />
+                              <span className="font-medium">{position.collateralSymbol}</span>
                             </div>
                             <Badge variant={position.collateralizationRatio > 150 ? "default" : position.collateralizationRatio > 120 ? "secondary" : "destructive"}>
                               {position.collateralizationRatio.toFixed(1)}%
@@ -266,7 +309,7 @@ function RepayContent() {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Collateral</span>
-                              <span>{position.collateralAmount} {position.collateralToken.symbol}</span>
+                              <span>{position.collateralAmount.toFixed(6)} {position.collateralSymbol}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Borrowed</span>
@@ -299,19 +342,27 @@ function RepayContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Total Value Locked</span>
-                      <span className="font-medium">$24.7M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.totalCollateralValueUSD)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">ALUD Circulating</span>
-                      <span className="font-medium">$18.2M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.totalALUDSupply)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Stability Pool</span>
-                      <span className="font-medium">$6.5M</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Current Rate</span>
-                      <span className="font-medium text-green-400">3.2% APR</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.stabilityPoolDeposits)
+                          : "—"}
+                      </span>
                     </div>
                   </div>
                 </CardContent>

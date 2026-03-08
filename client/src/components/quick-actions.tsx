@@ -12,7 +12,7 @@ export function QuickActions({ contractAddress }: QuickActionsProps) {
   const [showTestnetModal, setShowTestnetModal] = useState(false);
 
   const pancakeSwapUrl = `https://app.uniswap.org/swap?outputCurrency=0xb62870F6861BF065F5a6782996AB070EB9385d05`;
-  const etherscanUrl = `https://sepolia.etherscan.io/address/0x2b2fb8df4ac5d394f0d5674d7a54802e42a06aba`;
+  const etherscanUrl = `https://sepolia.etherscan.io/address/0x00904218319a045a96d776ec6a970f54741208e6`;
 
   return (
     <>

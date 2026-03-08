@@ -8,116 +8,70 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { useAlluria } from "@/hooks/use-alluria";
+import { useAluriaActions } from "@/hooks/use-alluria-actions";
+import {
+  COLLATERAL_TOKENS,
+  formatALUD,
+  formatCollateral,
+  formatUSD,
+  formatUSDDisplay,
+  formatRatio,
+  getCollateralMeta,
+  type CollateralTokenMeta,
+  type Address,
+} from "@/services/alluria-contracts";
 
 const aludLogo = "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png";
 
 import { AlertTriangle, Lock } from "lucide-react";
 
-interface CollateralToken {
-  symbol: string;
-  name: string;
-  address: string;
-  decimals: number;
-  logo: string;
-  price: number;
-  balance?: number;
-}
-
-interface LendingPosition {
-  id: string;
-  collateralToken: CollateralToken;
-  collateralAmount: number;
-  collateralValue: number;
-  borrowedAmount: number;
-  collateralizationRatio: number;
-  liquidationPrice: number;
-  interestRate: number;
-  isActive: boolean;
-}
-
-const collateralTokens: CollateralToken[] = [
-  {
-    symbol: "WBTC",
-    name: "Wrapped Bitcoin",
-    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-    decimals: 8,
-    logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png",
-    price: 67340.00,
-    balance: 0.15234
-  },
-  {
-    symbol: "WBNB",
-    name: "Wrapped BNB",
-    address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-    decimals: 18,
-    logo: "https://tokens.1inch.io/0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c.png",
-    price: 645.20,
-    balance: 5.432
-  },
-  {
-    symbol: "WETH",
-    name: "Wrapped Ethereum",
-    address: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
-    decimals: 18,
-    logo: "https://tokens.1inch.io/0x2170ed0880ac9a755fd29b2688956bd959f933f8.png",
-    price: 3420.50,
-    balance: 2.847
-  }
-];
-
 function DepositContent() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [collateralToken, setCollateralToken] = useState<CollateralToken | null>(null);
+  const [collateralToken, setCollateralToken] = useState<CollateralTokenMeta | null>(null);
   const [collateralAmount, setCollateralAmount] = useState("");
   const [borrowAmount, setBorrowAmount] = useState("");
   const [lastEditedField, setLastEditedField] = useState<'collateral' | 'borrow'>('collateral');
-  const [isLoading, setIsLoading] = useState(false);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [tokenSearchQuery, setTokenSearchQuery] = useState("");
   const [collateralizationRatio, setCollateralizationRatio] = useState(150);
   const [liquidationPrice, setLiquidationPrice] = useState(0);
   const [maxBorrowAmount, setMaxBorrowAmount] = useState(0);
-  const [positions, setPositions] = useState<LendingPosition[]>([]);
 
+  const {
+    userTroves,
+    collateralPrices,
+    collateralBalances,
+    systemStats,
+    isConnected,
+    contractsDeployed,
+    refetch,
+  } = useAlluria();
+  const actions = useAluriaActions();
+
+  // Default to WETH
   useEffect(() => {
-    const wethToken = collateralTokens.find(token => token.symbol === 'WETH');
-    if (wethToken && !collateralToken) {
-      setCollateralToken(wethToken);
+    if (!collateralToken) {
+      const weth = COLLATERAL_TOKENS.find((t) => t.symbol === "WETH");
+      if (weth) setCollateralToken(weth);
     }
-  }, []);
+  }, [collateralToken]);
 
-  useEffect(() => {
-    const mockPositions: LendingPosition[] = [
-      {
-        id: "1",
-        collateralToken: collateralTokens[0],
-        collateralAmount: 0.05,
-        collateralValue: 3367.00,
-        borrowedAmount: 2450.00,
-        collateralizationRatio: 137.5,
-        liquidationPrice: 59000.00,
-        interestRate: 3.2,
-        isActive: true
-      },
-      {
-        id: "2",
-        collateralToken: collateralTokens[2],
-        collateralAmount: 1.25,
-        collateralValue: 4275.63,
-        borrowedAmount: 3200.00,
-        collateralizationRatio: 133.6,
-        liquidationPrice: 2816.00,
-        interestRate: 3.1,
-        isActive: true
-      }
-    ];
-    setPositions(mockPositions);
-  }, []);
+  // Get live price for selected token
+  const livePrice = collateralToken && collateralPrices[collateralToken.address]
+    ? Number(formatUSD(collateralPrices[collateralToken.address]))
+    : 0;
 
+  // Get live balance for selected token
+  const liveBalance = collateralToken && collateralBalances[collateralToken.address]
+    ? Number(formatCollateral(collateralBalances[collateralToken.address], collateralToken.decimals))
+    : 0;
+
+  // Recalculate ratios
   useEffect(() => {
-    if (collateralToken && collateralAmount) {
-      const collateralValue = parseFloat(collateralAmount) * collateralToken.price;
+    if (collateralToken && collateralAmount && livePrice > 0) {
+      const collateralValue = parseFloat(collateralAmount) * livePrice;
       const maxBorrow = collateralValue / 1.10;
       setMaxBorrowAmount(maxBorrow);
 
@@ -135,7 +89,7 @@ function DepositContent() {
         setLiquidationPrice(liqPrice);
       }
     }
-  }, [collateralAmount, borrowAmount, collateralToken, lastEditedField, collateralizationRatio]);
+  }, [collateralAmount, borrowAmount, collateralToken, lastEditedField, collateralizationRatio, livePrice]);
 
   const handleCollateralAmountChange = (value: string) => {
     setCollateralAmount(value);
@@ -148,8 +102,8 @@ function DepositContent() {
   };
 
   const handlePercentageClick = (percentage: number) => {
-    if (collateralToken?.balance) {
-      const amount = (collateralToken.balance * percentage / 100).toFixed(6);
+    if (liveBalance > 0) {
+      const amount = (liveBalance * percentage / 100).toFixed(6);
       setCollateralAmount(amount);
       setLastEditedField('collateral');
     }
@@ -165,26 +119,18 @@ function DepositContent() {
       return;
     }
 
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({ title: "Position Created", description: `Successfully deposited ${collateralAmount} ${collateralToken.symbol} and borrowed ${borrowAmount} ALUD.` });
-      const newPosition: LendingPosition = {
-        id: Date.now().toString(),
-        collateralToken,
-        collateralAmount: parseFloat(collateralAmount),
-        collateralValue: parseFloat(collateralAmount) * collateralToken.price,
-        borrowedAmount: parseFloat(borrowAmount),
-        collateralizationRatio,
-        liquidationPrice,
-        interestRate: 3.2,
-        isActive: true
-      };
-      setPositions(prev => [...prev, newPosition]);
-      setCollateralAmount("");
-      setBorrowAmount("");
-      setCollateralizationRatio(150);
-    }, 2000);
+    actions.openTrove(
+      collateralToken.address as Address,
+      collateralAmount,
+      borrowAmount,
+      collateralToken.decimals,
+      () => {
+        setCollateralAmount("");
+        setBorrowAmount("");
+        setCollateralizationRatio(150);
+        refetch();
+      }
+    );
   };
 
   const getRatioColor = (ratio: number) => {
@@ -193,10 +139,31 @@ function DepositContent() {
     return "text-green-400";
   };
 
-  const filteredTokens = collateralTokens.filter(token =>
+  const filteredTokens = COLLATERAL_TOKENS.filter(token =>
     token.symbol.toLowerCase().includes(tokenSearchQuery.toLowerCase()) ||
     token.name.toLowerCase().includes(tokenSearchQuery.toLowerCase())
   );
+
+  // Build position list from live data
+  const positions = userTroves.map((trove, i) => {
+    const meta = getCollateralMeta(trove.collateral);
+    const price = collateralPrices[trove.collateral]
+      ? Number(formatUSD(collateralPrices[trove.collateral]))
+      : 0;
+    const colAmt = meta ? Number(formatCollateral(trove.collateralAmount, meta.decimals)) : 0;
+    const debt = Number(formatALUD(trove.debt));
+    const ratio = Number(formatRatio(trove.collateralRatio));
+    const liqPrice = Number(formatUSD(trove.liquidationPrice));
+    return {
+      id: `trove-${i}`,
+      collateralToken: meta,
+      collateralAmount: colAmt,
+      collateralValue: colAmt * price,
+      borrowedAmount: debt,
+      collateralizationRatio: ratio,
+      liquidationPrice: liqPrice,
+    };
+  });
 
   return (
     <Layout>
@@ -215,9 +182,9 @@ function DepositContent() {
                     <div className="bg-[var(--crypto-dark)] rounded-t-lg p-4 border border-[var(--crypto-border)]">
                       <div className="flex items-center justify-between mb-3">
                         <label className="text-gray-400 text-sm">Collateral</label>
-                        {collateralToken?.balance && (
+                        {isConnected && collateralToken && (
                           <span className="text-sm text-gray-400">
-                            Balance: {collateralToken.balance.toFixed(6)}
+                            Balance: {liveBalance.toFixed(6)}
                           </span>
                         )}
                       </div>
@@ -242,7 +209,7 @@ function DepositContent() {
                           ) : "Select Token"}
                         </Button>
                       </div>
-                      {collateralToken?.balance && (
+                      {isConnected && collateralToken && (
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex space-x-2">
                             {[25, 50, 75, 100].map((percentage) => (
@@ -251,9 +218,9 @@ function DepositContent() {
                               >{percentage}%</Button>
                             ))}
                           </div>
-                          {collateralToken && collateralAmount && (
+                          {collateralAmount && livePrice > 0 && (
                             <div className="text-sm text-gray-500">
-                              ≈ ${(parseFloat(collateralAmount) * collateralToken.price).toFixed(2)} USD
+                              ≈ ${(parseFloat(collateralAmount) * livePrice).toFixed(2)} USD
                             </div>
                           )}
                         </div>
@@ -318,12 +285,10 @@ function DepositContent() {
                         <h4 className="font-medium text-gray-300 mb-3">Transaction Summary</h4>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-gray-400">Interest Rate</span>
-                            <span className="text-gray-300">3.2% APR</span>
-                          </div>
-                          <div className="flex justify-between">
                             <span className="text-gray-400">Collateral Value</span>
-                            <span className="text-gray-300">${collateralToken ? (parseFloat(collateralAmount) * collateralToken.price).toFixed(2) : '0.00'}</span>
+                            <span className="text-gray-300">
+                              ${livePrice > 0 ? (parseFloat(collateralAmount) * livePrice).toFixed(2) : '0.00'}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">Borrowing</span>
@@ -341,15 +306,15 @@ function DepositContent() {
 
                     <Button
                       onClick={handleDeposit}
-                      disabled={!collateralToken || !collateralAmount || !borrowAmount || collateralizationRatio < 110 || isLoading}
+                      disabled={!collateralToken || !collateralAmount || !borrowAmount || collateralizationRatio < 110 || !!actions.pendingTx || !isConnected}
                       className="w-full h-12 text-lg bg-gradient-to-r from-crypto-blue to-crypto-purple hover:from-crypto-blue/80 hover:to-crypto-purple/80 text-white font-medium"
                     >
-                      {isLoading ? (
+                      {actions.pendingTx?.includes("Opened trove") ? (
                         <div className="flex items-center space-x-2">
                           <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                           <span>Creating Position...</span>
                         </div>
-                      ) : "Create Lending Position"}
+                      ) : !isConnected ? "Connect Wallet" : "Create Lending Position"}
                     </Button>
                   </div>
                 </CardContent>
@@ -363,7 +328,12 @@ function DepositContent() {
                   <CardTitle className="text-lg">Your Positions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {positions.length === 0 ? (
+                  {!isConnected ? (
+                    <div className="text-center py-8">
+                      <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-sm text-muted-foreground">Connect wallet to view positions</p>
+                    </div>
+                  ) : positions.length === 0 ? (
                     <div className="text-center py-8">
                       <Lock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-sm text-muted-foreground">No active positions</p>
@@ -374,8 +344,10 @@ function DepositContent() {
                         <div key={position.id} className="p-4 border rounded-lg space-y-3 hover:bg-muted/50 transition-colors">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
-                              <img src={position.collateralToken.logo} alt={position.collateralToken.symbol} className="w-6 h-6 rounded-full" />
-                              <span className="font-medium">{position.collateralToken.symbol}</span>
+                              {position.collateralToken && (
+                                <img src={position.collateralToken.logo} alt={position.collateralToken.symbol} className="w-6 h-6 rounded-full" />
+                              )}
+                              <span className="font-medium">{position.collateralToken?.symbol ?? "?"}</span>
                             </div>
                             <Badge variant={position.collateralizationRatio > 150 ? "default" : position.collateralizationRatio > 120 ? "secondary" : "destructive"}>
                               {position.collateralizationRatio.toFixed(1)}%
@@ -384,7 +356,7 @@ function DepositContent() {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Collateral</span>
-                              <span>{position.collateralAmount} {position.collateralToken.symbol}</span>
+                              <span>{position.collateralAmount.toFixed(6)} {position.collateralToken?.symbol}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Borrowed</span>
@@ -417,19 +389,31 @@ function DepositContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Total Value Locked</span>
-                      <span className="font-medium">$24.7M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.totalCollateralValueUSD)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">ALUD Circulating</span>
-                      <span className="font-medium">$18.2M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.totalALUDSupply)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Stability Pool</span>
-                      <span className="font-medium">$6.5M</span>
+                      <span className="font-medium">
+                        {contractsDeployed && systemStats
+                          ? formatUSDDisplay(systemStats.stabilityPoolDeposits)
+                          : "—"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Current Rate</span>
-                      <span className="font-medium text-green-400">3.2% APR</span>
+                      <span className="text-muted-foreground">Min Collateral Ratio</span>
+                      <span className="font-medium text-white">110%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -446,25 +430,35 @@ function DepositContent() {
               <div className="space-y-4">
                 <Input placeholder="Search tokens..." value={tokenSearchQuery} onChange={(e) => setTokenSearchQuery(e.target.value)} />
                 <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {filteredTokens.map((token) => (
-                    <button
-                      key={token.address}
-                      onClick={() => { setCollateralToken(token); setIsTokenModalOpen(false); }}
-                      className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <img src={token.logo} alt={token.symbol} className="w-8 h-8 rounded-full" />
-                        <div className="text-left">
-                          <div className="font-medium">{token.symbol}</div>
-                          <div className="text-sm text-muted-foreground">{token.name}</div>
+                  {filteredTokens.map((token) => {
+                    const price = collateralPrices[token.address]
+                      ? Number(formatUSD(collateralPrices[token.address]))
+                      : 0;
+                    const balance = collateralBalances[token.address]
+                      ? Number(formatCollateral(collateralBalances[token.address], token.decimals))
+                      : 0;
+                    return (
+                      <button
+                        key={token.address}
+                        onClick={() => { setCollateralToken(token); setIsTokenModalOpen(false); }}
+                        className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <img src={token.logo} alt={token.symbol} className="w-8 h-8 rounded-full" />
+                          <div className="text-left">
+                            <div className="font-medium">{token.symbol}</div>
+                            <div className="text-sm text-muted-foreground">{token.name}</div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium">${token.price.toLocaleString()}</div>
-                        {token.balance && <div className="text-sm text-muted-foreground">{token.balance}</div>}
-                      </div>
-                    </button>
-                  ))}
+                        <div className="text-right">
+                          <div className="font-medium">{price > 0 ? `$${price.toLocaleString()}` : "—"}</div>
+                          {isConnected && balance > 0 && (
+                            <div className="text-sm text-muted-foreground">{balance.toFixed(6)}</div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </DialogContent>

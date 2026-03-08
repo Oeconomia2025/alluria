@@ -14,7 +14,7 @@ export function TestnetModal({ isOpen, onClose }: TestnetModalProps) {
   
   // Placeholder testnet contract address
   const testnetContract = "0xTestContract123456789012345678901234567890";
-  const testnetEtherscanUrl = `https://sepolia.etherscan.io/address/0x2b2fb8df4ac5d394f0d5674d7a54802e42a06aba`;
+  const testnetEtherscanUrl = `https://sepolia.etherscan.io/address/0x00904218319a045a96d776ec6a970f54741208e6`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

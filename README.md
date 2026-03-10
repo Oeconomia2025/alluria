@@ -1,8 +1,8 @@
-# Oeconomia Cryptocurrency Dashboard
+# Alluria Protocol
 
-A comprehensive cryptocurrency dashboard and governance platform for the Oeconomia ecosystem, providing advanced portfolio tracking, real-time market insights, and a fully decentralized governance infrastructure.
+Decentralized lending protocol for the Oeconomia ecosystem. Deposit collateral, mint ALUD stablecoin, earn liquidation gains in the Stability Pool, and stake ALUR for protocol fees.
 
-![Oeconomia Dashboard](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)

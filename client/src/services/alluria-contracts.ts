@@ -19,13 +19,13 @@ export type { Address } from "viem";
 // =============================================================================
 
 export const CONTRACTS = {
-  TroveManager: "0x0000000000000000000000000000000000000000" as Address,
-  StabilityPool: "0x0000000000000000000000000000000000000000" as Address,
-  CollateralManager: "0x0000000000000000000000000000000000000000" as Address,
-  PriceFeed: "0x0000000000000000000000000000000000000000" as Address,
-  ALUD: "0x0000000000000000000000000000000000000000" as Address,
-  AluriaLens: "0x0000000000000000000000000000000000000000" as Address,
-  EmissionsVault: "0x0000000000000000000000000000000000000000" as Address,
+  TroveManager: "0x90CCA7d8B6cAb91d53e384E3c0cD3Ba34b7B8Cc2" as Address,
+  StabilityPool: "0xB61a71C78e10C0C92e2dFF457C9F87dC71260c43" as Address,
+  CollateralManager: "0x6423C894371992594a7fE8e2e0E65BEF4EE5cABb" as Address,
+  PriceFeed: "0x79A91c7659AA69A5F8722aB3786D44D367ADEeFe" as Address,
+  ALUD: "0x41B07704b9d671615A3E9f83c06D85CB38bbf4D9" as Address,
+  AluriaLens: "0x150485AC97153Ac772D43736564ccf7122d92bcf" as Address,
+  EmissionsVault: "0x3b62AF3344830690770156033D127dE7186Cd9a1" as Address,
 } as const;
 
 export const PLACEHOLDER_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
@@ -54,23 +54,23 @@ export const COLLATERAL_TOKENS: CollateralTokenMeta[] = [
   {
     symbol: "WBTC",
     name: "Wrapped Bitcoin",
-    address: "0x0000000000000000000000000000000000000000" as Address, // TODO: deployed address
+    address: "0x29f2D40B0605204364af54EC677bD022dA425d03" as Address, // Sepolia WBTC
     decimals: 8,
     logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png",
   },
   {
     symbol: "WETH",
     name: "Wrapped Ethereum",
-    address: "0x0000000000000000000000000000000000000000" as Address, // TODO: deployed address
+    address: "0x34b11F6b8f78fa010bBCA71bC7FE79dAa811b89f" as Address, // Sepolia WETH (Eloqura)
     decimals: 18,
     logo: "https://tokens.1inch.io/0x2170ed0880ac9a755fd29b2688956bd959f933f8.png",
   },
   {
-    symbol: "WBNB",
-    name: "Wrapped BNB",
-    address: "0x0000000000000000000000000000000000000000" as Address, // TODO: deployed address
+    symbol: "LINK",
+    name: "Chainlink",
+    address: "0x779877A7B0D9E8603169DdbD7836e478b4624789" as Address, // Sepolia LINK
     decimals: 18,
-    logo: "https://tokens.1inch.io/0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c.png",
+    logo: "https://tokens.1inch.io/0x514910771af9ca656af840dff83e8264ecf986ca.png",
   },
 ];
 
@@ -419,7 +419,7 @@ export function getPublicClient(): PublicClient {
   if (!_publicClient) {
     _publicClient = createPublicClient({
       chain: sepolia,
-      transport: http(),
+      transport: http("https://eth-sepolia.g.alchemy.com/v2/esuQ5PPGg8-Sr5-X-P-JT"),
     });
   }
   return _publicClient;

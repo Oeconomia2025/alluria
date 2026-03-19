@@ -46,53 +46,106 @@ export function Layout({ children }: LayoutProps) {
     return false;
   });
 
-  // Live token prices
+  // Live token prices from Chainlink Sepolia feeds
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({
-    ALUR: 0.0842,
+    ALUR: 0,
     ALUD: 1.00,
-    BTC: 0,
-    ETH: 0,
-    BNB: 0,
-    TAO: 0,
+    WBTC: 0,
+    WETH: 0,
+    LINK: 0,
   });
 
   useEffect(() => {
-    const fetchPrices = async () => {
+    const fetchSepoliaPrices = async () => {
       try {
-        const res = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,bittensor&vs_currencies=usd"
+        const { createPublicClient, http } = await import("viem");
+        const { sepolia } = await import("viem/chains");
+        const client = createPublicClient({
+          chain: sepolia,
+          transport: http("https://eth-sepolia.g.alchemy.com/v2/esuQ5PPGg8-Sr5-X-P-JT"),
+        });
+
+        const chainlinkABI = [{
+          inputs: [], name: "latestRoundData", stateMutability: "view", type: "function",
+          outputs: [
+            { name: "roundId", type: "uint80" }, { name: "answer", type: "int256" },
+            { name: "startedAt", type: "uint256" }, { name: "updatedAt", type: "uint256" },
+            { name: "answeredInRound", type: "uint80" },
+          ],
+        }] as const;
+
+        // Chainlink Sepolia price feeds
+        const feeds: Record<string, `0x${string}`> = {
+          WETH: "0x694AA1769357215DE4FAC081bf1f309aDC325306",
+          WBTC: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
+          LINK: "0xc59E3633BAAC79493d908e63626716e204A45EdF",
+        };
+
+        const results = await Promise.allSettled(
+          Object.entries(feeds).map(async ([symbol, addr]) => {
+            const data = await client.readContract({
+              address: addr, abi: chainlinkABI, functionName: "latestRoundData",
+            });
+            // Chainlink returns 8 decimals
+            return { symbol, price: Number(data[1]) / 1e8 };
+          })
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setTokenPrices((prev) => ({
-          ...prev,
-          BTC: data.bitcoin?.usd ?? prev.BTC,
-          ETH: data.ethereum?.usd ?? prev.ETH,
-          BNB: data.binancecoin?.usd ?? prev.BNB,
-          TAO: data.bittensor?.usd ?? prev.TAO,
-        }));
-      } catch (err) {
-        console.error("CoinGecko fetch failed, trying fallback:", err);
-        try {
-          const res = await fetch(
-            "https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH,BNB&tsyms=USD"
-          );
-          if (res.ok) {
-            const data = await res.json();
-            setTokenPrices((prev) => ({
-              ...prev,
-              BTC: data.BTC?.USD ?? prev.BTC,
-              ETH: data.ETH?.USD ?? prev.ETH,
-              BNB: data.BNB?.USD ?? prev.BNB,
-            }));
+
+        setTokenPrices((prev) => {
+          const next = { ...prev };
+          for (const r of results) {
+            if (r.status === "fulfilled" && r.value.price > 0) {
+              next[r.value.symbol] = r.value.price;
+            }
           }
-        } catch (fallbackErr) {
-          console.error("Fallback fetch also failed:", fallbackErr);
+          return next;
+        });
+
+        // Fetch ALUR price from Eloqura DEX pool reserves (ALUR/USDC)
+        try {
+          const eloquraFactoryAddr = "0x1a4C7849Dd8f62AefA082360b3A8D857952B3b8e" as `0x${string}`;
+          const alurAddr = "0x5cdBed8ED63554FDE6653F02ae1c4d6d5ae71aD3" as `0x${string}`;
+          const usdcAddr = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" as `0x${string}`;
+
+          const pairAddr = await client.readContract({
+            address: eloquraFactoryAddr,
+            abi: [{ inputs: [{ type: "address" }, { type: "address" }], name: "getPair", outputs: [{ type: "address" }], stateMutability: "view", type: "function" }] as const,
+            functionName: "getPair",
+            args: [alurAddr, usdcAddr],
+          });
+
+          if (pairAddr && pairAddr !== "0x0000000000000000000000000000000000000000") {
+            const [reserves, token0] = await Promise.all([
+              client.readContract({
+                address: pairAddr,
+                abi: [{ inputs: [], name: "getReserves", outputs: [{ type: "uint112" }, { type: "uint112" }, { type: "uint32" }], stateMutability: "view", type: "function" }] as const,
+                functionName: "getReserves",
+              }),
+              client.readContract({
+                address: pairAddr,
+                abi: [{ inputs: [], name: "token0", outputs: [{ type: "address" }], stateMutability: "view", type: "function" }] as const,
+                functionName: "token0",
+              }),
+            ]);
+
+            const isAlurToken0 = (token0 as string).toLowerCase() === alurAddr.toLowerCase();
+            // ALUR has 18 decimals, USDC has 6 decimals
+            const alurReserve = Number(isAlurToken0 ? reserves[0] : reserves[1]) / 1e18;
+            const usdcReserve = Number(isAlurToken0 ? reserves[1] : reserves[0]) / 1e6;
+
+            if (alurReserve > 0 && usdcReserve > 0) {
+              setTokenPrices((prev) => ({ ...prev, ALUR: usdcReserve / alurReserve }));
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch ALUR price from Eloqura pool:", err);
         }
+      } catch (err) {
+        console.error("Failed to fetch Sepolia prices:", err);
       }
     };
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
+    fetchSepoliaPrices();
+    const interval = setInterval(fetchSepoliaPrices, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -304,7 +357,7 @@ export function Layout({ children }: LayoutProps) {
                 style={{ borderColor: "#c89a6d", backgroundColor: "#10031d" }}
               >
                 <DropdownMenuItem
-                  onClick={() => window.open("https://oeconomia.tech/", "_blank")}
+                  onClick={() => window.open("https://oeconomia.io/", "_blank")}
                   className={`cursor-pointer rounded-md transition-all duration-200 focus:bg-transparent ${
                     sidebarCollapsed ? "justify-center px-2" : "px-3"
                   }`}
@@ -418,10 +471,9 @@ export function Layout({ children }: LayoutProps) {
               {[
                 { symbol: "ALUR", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/With%20Border/ALUR%20no%20Border.png", group: "alluria" },
                 { symbol: "ALUD", logo: "https://pub-37d61a7eb7ae45898b46702664710cb2.r2.dev/ALUD.png", group: "alluria" },
-                { symbol: "BTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png", group: "market" },
-                { symbol: "ETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png", group: "market" },
-                { symbol: "BNB", logo: "https://tokens.1inch.io/0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c.png", group: "market" },
-                { symbol: "TAO", logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/22974.png", group: "market" },
+                { symbol: "WETH", logo: "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png", group: "collateral" },
+                { symbol: "WBTC", logo: "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png", group: "collateral" },
+                { symbol: "LINK", logo: "https://tokens.1inch.io/0x514910771af9ca656af840dff83e8264ecf986ca.png", group: "collateral" },
               ].map((token, i, arr) => (
                 <div key={token.symbol} className="flex items-center gap-2">
                   {i > 0 && arr[i - 1].group !== token.group && (
